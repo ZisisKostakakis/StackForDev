@@ -25,7 +25,7 @@ resource "aws_api_gateway_deployment" "stack_for_dev" {
   }
 }
 
-resource "aws_api_gateway_stage" "stack_for_dev" {
+resource "aws_api_gateway_stage" "prod" {
   deployment_id = aws_api_gateway_deployment.stack_for_dev.id
   rest_api_id   = aws_api_gateway_rest_api.stack_for_dev.id
   stage_name    = "prod"
