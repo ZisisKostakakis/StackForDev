@@ -9,7 +9,6 @@ resource "aws_api_gateway_rest_api" "stack_for_dev" {
 
 resource "aws_api_gateway_deployment" "stack_for_dev" {
   rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
-  stage_name  = "prod"
 
   triggers = {
     redeployment = sha1(jsonencode({
@@ -44,7 +43,7 @@ resource "aws_api_gateway_usage_plan" "stack_for_dev" {
 
   api_stages {
     api_id = aws_api_gateway_rest_api.stack_for_dev.id
-    stage  = aws_api_gateway_stage.stack_for_dev.stage_name
+    stage  = "prod"
 
     throttle {
       burst_limit = 1
@@ -73,7 +72,7 @@ resource "aws_api_gateway_usage_plan_key" "stack_for_dev" {
 
 resource "aws_api_gateway_method_settings" "stack_for_dev" {
   rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
-  stage_name  = aws_api_gateway_stage.stack_for_dev.stage_name
+  stage_name  = "prod"
   method_path = "*/*"
 
   settings {
@@ -106,5 +105,5 @@ resource "aws_api_gateway_resource" "generate_dockerfile" {
 }
 
 output "api_gateway_invoke_url" {
-  value = aws_api_gateway_stage.stack_for_dev.invoke_url
+  value = aws_api_gateway_stage.prod.invoke_url
 }
