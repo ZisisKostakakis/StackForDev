@@ -4,7 +4,7 @@ A service that generates optimized Dockerfiles based on project requirements.
 
 ## Architecture
 
-![Architecture Diagram](./StackForDev.png)
+![Architecture Diagram](./images/StackForDev.png)
 
 - AWS Lambda (Container Runtime)
 - Amazon API Gateway
