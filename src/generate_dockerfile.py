@@ -5,7 +5,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from docker_templates.python_template import END_OF_TEMPLATE, START_OF_TEMPLATE
-from s3_helper import upload_file_to_s3, check_if_file_exists_in_s3
+from src.s3_helper import upload_file_to_s3, check_if_file_exists_in_s3
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -170,7 +170,7 @@ def lambda_handler(event: dict[str, Any], context: dict) -> dict:
         dockerfile_content = generator.generate_dockerfile()
 
         dockerfile_key_name = generate_dockerfile_key_name(config)
-        path = "python/" if config.language == "python" else ""
+        path = "python-images/" if config.language == "python" else ""
         generator.save_dockerfile(path=dockerfile_key_name, dir=path)
 
         if is_running_on_lambda():
@@ -209,16 +209,3 @@ def lambda_handler(event: dict[str, Any], context: dict) -> dict:
         }
     except Exception as e:
         return {"statusCode": 400, "body": json.dumps({"error": str(e)})}
-
-
-if __name__ == "__main__":
-    test_event = {
-        "config": {
-            "language": "python",
-            "dependency_stack": "Django",
-            "extra_dependencies": ["pandas", "numpy"],
-            "language_version": "3.11",
-        }
-    }
-    result = lambda_handler(event=test_event, context={})
-    print(json.dumps(result, indent=2))
