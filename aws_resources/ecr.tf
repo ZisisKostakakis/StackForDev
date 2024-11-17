@@ -9,24 +9,22 @@ resource "aws_ecr_repository_policy" "stack_for_dev" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowPushPull"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${var.AWS_ACCOUNT_ID}:root"
-        }
-        Action = [
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:PutImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
-        ]
+    Statement = [{
+      Sid    = "AllowPushPull"
+      Effect = "Allow"
+      Principal = {
+        AWS = "arn:aws:iam::${var.AWS_ACCOUNT_ID}:root"
       }
-    ]
+      Action = sort([
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:CompleteLayerUpload",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart"
+      ])
+    }]
   })
 }
 
