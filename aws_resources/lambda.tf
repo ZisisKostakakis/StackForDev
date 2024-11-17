@@ -5,6 +5,12 @@ resource "aws_lambda_function" "stack_for_dev" {
   image_uri     = "${aws_ecr_repository.stack_for_dev.repository_url}:latest"
   tags = local.common_tags
   timeout = 30
+
+   lifecycle {
+    ignore_changes = [
+      environment
+    ]
+  }
 }
 
 # Add Lambda permission for API Gateway
