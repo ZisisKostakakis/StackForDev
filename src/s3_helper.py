@@ -3,10 +3,10 @@ import boto3
 from mypy_boto3_s3.client import S3Client
 
 
-def upload_file_to_s3(
+def upload_to_s3(
     file_path: str,
     bucket: Optional[str],
-    key: str,
+    content: str,
     region_name: Optional[str],
 ) -> None:
     """Upload a file to S3"""
@@ -17,7 +17,7 @@ def upload_file_to_s3(
         raise ValueError("Region name is required")
 
     s3_client: S3Client = boto3.client("s3", region_name=region_name)
-    s3_client.upload_file(Filename=file_path, Bucket=bucket, Key=key)
+    s3_client.put_object(Bucket=bucket, Key=file_path, Body=content)
 
 
 def check_if_file_exists_in_s3(
@@ -31,4 +31,8 @@ def check_if_file_exists_in_s3(
         raise ValueError("Region name is required")
 
     s3_client: S3Client = boto3.client("s3", region_name=region_name)
-    return s3_client.head_object(Bucket=bucket, Key=key) is not None
+    try:
+        s3_client.head_object(Bucket=bucket, Key=key)
+        return True
+    except Exception:
+        return False

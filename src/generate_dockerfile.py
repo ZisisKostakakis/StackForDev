@@ -4,8 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from docker_templates.python_template import END_OF_TEMPLATE, START_OF_TEMPLATE
-from src.s3_helper import upload_file_to_s3, check_if_file_exists_in_s3
+from src.docker_templates.python_template import END_OF_TEMPLATE, START_OF_TEMPLATE
+from src.s3_helper import upload_to_s3, check_if_file_exists_in_s3
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -190,12 +190,15 @@ def lambda_handler(event: dict[str, Any], context: dict) -> dict:
                     ),
                 }
 
-            upload_file_to_s3(
-                file_path=os.path.join(path, dockerfile_key_name),
-                bucket=os.getenv("S3_BUCKET"),
-                key=dockerfile_content,
-                region_name=os.getenv("AWS_REGION"),
-            )
+            try:
+                upload_to_s3(
+                    file_path=os.path.join(path, dockerfile_key_name),
+                    bucket=os.getenv("S3_BUCKET"),
+                    content=dockerfile_content,
+                    region_name=os.getenv("AWS_REGION"),
+                )
+            except Exception as e:
+                return {"statusCode": 500, "body": json.dumps({"error": f"Failed to upload Dockerfile to S3, {e}"})}
 
         return {
             "statusCode": 200,

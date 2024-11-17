@@ -15,7 +15,7 @@ docker.push:
 	docker push $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest
 
 build:
-	docker build --no-cache --platform linux/arm64 -t $(IMAGE_NAME) .
+	docker build --no-cache --platform linux/amd64 -t $(IMAGE_NAME) -f generate_dockerfile.dockerfile .
 
 lambda.update-code:
 	aws lambda update-function-code --function-name "$(IMAGE_NAME)" \
@@ -28,7 +28,8 @@ lambda.update-configuration:
 		if [ "$$status" = "Active	Successful" ]; then \
 			echo "Lambda function is active and successful. Performing the task..."; \
 			aws lambda update-function-configuration \
-				--function-name $(IMAGE_NAME)
+				--function-name $(IMAGE_NAME) \
+				--environment "Variables={S3_BUCKET=$(S3_BUCKET)}"; \
 			break; \
 		else \
 			echo "Attempt $(i): Lambda function is not active or successful. Rechecking in 5 seconds..."; \
