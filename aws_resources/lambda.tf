@@ -3,10 +3,10 @@ resource "aws_lambda_function" "stack_for_dev" {
   role          = aws_iam_role.stack_for_dev.arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.stack_for_dev.repository_url}:latest"
-  tags = local.common_tags
-  timeout = 30
+  tags          = local.common_tags
+  timeout       = 30
 
-   lifecycle {
+  lifecycle {
     ignore_changes = [
       environment
     ]
