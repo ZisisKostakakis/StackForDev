@@ -1,7 +1,7 @@
 """Script to generate the dockerfile based on the API parameters"""
 import json
 import os
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -146,7 +146,7 @@ def generate_dockerfile_key_name(config: GenerateDockerfileRequest) -> str:
     )
 
 
-def lambda_handler(event: dict[str, Any]) -> dict:
+def lambda_handler(event: dict[str, Any], context: Optional[dict] = None) -> dict:
     """AWS Lambda handler for the Dockerfile generation API endpoint.
 
     Processes incoming API Gateway requests, generates Dockerfiles,
@@ -176,7 +176,7 @@ def lambda_handler(event: dict[str, Any]) -> dict:
         generator.save_dockerfile(path=dockerfile_key_name, directory=path)
 
         aws_region = os.getenv("AWS_REGION")
-        bucket = os.getenv("BUCKET")
+        bucket = os.getenv("S3_BUCKET")
         url = f"https://{bucket}.s3.{aws_region}.amazonaws.com/{path}{dockerfile_key_name}"
 
         if is_running_on_lambda():
@@ -200,9 +200,9 @@ def lambda_handler(event: dict[str, Any]) -> dict:
             try:
                 upload_to_s3(
                     file_path=os.path.join(path, dockerfile_key_name),
-                    bucket=os.getenv("S3_BUCKET"),
+                    bucket=bucket,
                     content=dockerfile_content,
-                    region_name=os.getenv("AWS_REGION"),
+                    region_name=aws_region,
                 )
             except Exception as e:
                 return {
