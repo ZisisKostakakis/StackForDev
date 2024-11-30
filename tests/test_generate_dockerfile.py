@@ -5,13 +5,30 @@ import shutil
 
 def test_lambda_handler():
     test_event = {
-        "config": {
-            "language": "python",
-            "dependency_stack": "Django",
-            "extra_dependencies": ["pandas", "numpy"],
-            "language_version": "3.11",
-        }
+        "resource": "/generate-dockerfile",
+        "path": "/generate-dockerfile",
+        "httpMethod": "GET",
+        "headers": {},
+        "multiValueHeaders": {},
+        "queryStringParameters": None,
+        "multiValueQueryStringParameters": None,
+        "pathParameters": None,
+        "stageVariables": None,
+        "requestContext": {},
+        "body": '''{
+            "config": {
+                "language": "python",
+                "dependency_stack": "Django",
+                "extra_dependencies": [
+                    "pandas",
+                    "numpy"
+                ],
+                "language_version": "3.11"
+            }
+        }''',
+        "isBase64Encoded": False,
     }
+
     result = lambda_handler(event=test_event)
 
     assert result["statusCode"] == 200
