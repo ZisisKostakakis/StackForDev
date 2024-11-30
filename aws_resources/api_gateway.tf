@@ -62,6 +62,9 @@ resource "aws_api_gateway_usage_plan" "stack_for_dev" {
     burst_limit = 1
     rate_limit  = 1
   }
+  depends_on = [
+    aws_api_gateway_stage.prod
+  ]
 }
 
 resource "aws_api_gateway_usage_plan_key" "stack_for_dev" {
@@ -79,13 +82,23 @@ resource "aws_api_gateway_method_settings" "stack_for_dev" {
     throttling_burst_limit = 1
     throttling_rate_limit  = 1
   }
+  depends_on = [
+    aws_api_gateway_stage.prod,
+    aws_api_gateway_method.generate_dockerfile
+  ]
+}
+
+resource "aws_api_gateway_resource" "generate_dockerfile" {
+  path_part   = "generate-dockerfile"
+  parent_id   = aws_api_gateway_rest_api.stack_for_dev.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
 }
 
 resource "aws_api_gateway_method" "generate_dockerfile" {
-  authorization = "NONE"
-  http_method   = "GET"
-  resource_id   = aws_api_gateway_rest_api.stack_for_dev.root_resource_id
-  rest_api_id   = aws_api_gateway_rest_api.stack_for_dev.id
+  authorization    = "NONE"
+  http_method      = "GET"
+  resource_id      = aws_api_gateway_resource.generate_dockerfile.id
+  rest_api_id      = aws_api_gateway_rest_api.stack_for_dev.id
   api_key_required = "true"
 }
 
@@ -99,10 +112,17 @@ resource "aws_api_gateway_integration" "generate_dockerfile" {
   uri                     = aws_lambda_function.stack_for_dev.invoke_arn
 }
 
-resource "aws_api_gateway_resource" "generate_dockerfile" {
-  path_part   = "generate-dockerfile"
-  parent_id   = aws_api_gateway_rest_api.stack_for_dev.root_resource_id
+resource "aws_api_gateway_method_response" "response_200" {
   rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.generate_dockerfile.id
+  http_method = aws_api_gateway_method.generate_dockerfile.http_method
+  status_code = "200"
+  response_models = {
+    "application/json" = "Empty"
+  }
+  depends_on = [
+    aws_api_gateway_method.generate_dockerfile
+  ]
 }
 
 output "api_gateway_invoke_url" {
