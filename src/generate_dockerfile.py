@@ -1,4 +1,5 @@
 """Script to generate the dockerfile based on the API parameters"""
+
 import json
 import os
 from typing import Any, Optional
@@ -66,7 +67,8 @@ class GenerateDockerfileRequest(BaseModel):
         Raises:
             ValidationError: If the event data doesn't match the expected schema
         """
-        return cls(**event["config"])
+        dict_obj = json.loads(event["body"])
+        return cls(**dict_obj["config"])
 
 
 class DockerfileGenerator(BaseModel):
@@ -180,7 +182,6 @@ def lambda_handler(event: dict[str, Any], context: Optional[dict] = None) -> dic
         url = f"https://{bucket}.s3.{aws_region}.amazonaws.com/{path}{dockerfile_key_name}"
 
         if is_running_on_lambda():
-
             if check_if_file_exists_in_s3(
                 bucket=bucket,
                 key=dockerfile_key_name,
