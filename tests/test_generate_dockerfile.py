@@ -12,7 +12,7 @@ def test_lambda_handler():
             "language_version": "3.11",
         }
     }
-    result = lambda_handler(event=test_event, context={})
+    result = lambda_handler(event=test_event)
 
     assert result["statusCode"] == 200
     response_body = json.loads(result["body"])
