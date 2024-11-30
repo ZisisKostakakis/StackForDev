@@ -86,6 +86,7 @@ resource "aws_api_gateway_method" "generate_dockerfile" {
   http_method   = "GET"
   resource_id   = aws_api_gateway_rest_api.stack_for_dev.root_resource_id
   rest_api_id   = aws_api_gateway_rest_api.stack_for_dev.id
+  api_key_required = "true"
 }
 
 resource "aws_api_gateway_integration" "generate_dockerfile" {
