@@ -1,3 +1,4 @@
+"""Script to generate the dockerfile based on the API parameters"""
 import json
 import os
 from typing import Any
@@ -93,9 +94,7 @@ class DockerfileGenerator(BaseModel):
             + END_OF_TEMPLATE
         )
 
-    def save_dockerfile(
-        self, path: str = "Dockerfile.generated", dir: str = "tmp/"
-    ) -> None:
+    def save_dockerfile(self, path: str = "Dockerfile.generated", directory: str = "tmp/") -> None:
         """Save the generated Dockerfile to the local filesystem.
 
         Note: This operation is skipped when running on Lambda.
@@ -110,8 +109,8 @@ class DockerfileGenerator(BaseModel):
         if is_running_on_lambda():
             return
 
-        os.makedirs(dir, exist_ok=True)
-        with open(os.path.join(dir, path), "w") as f:
+        os.makedirs(directory, exist_ok=True)
+        with open(os.path.join(directory, path), "w", encoding="utf-8") as f:
             f.write(self.generate_dockerfile())
 
 
@@ -141,10 +140,13 @@ def generate_dockerfile_key_name(config: GenerateDockerfileRequest) -> str:
     Returns:
         str: Formatted key name for S3 storage
     """
-    return f"dockerfile-{config.language}-{config.dependency_stack}-{config.language_version}-{'-'.join(config.extra_dependencies)}.dockerfile"
+    return (
+        f"dockerfile-{config.language}-{config.dependency_stack}-"
+        + f"{config.language_version}-{'-'.join(config.extra_dependencies)}.dockerfile"
+    )
 
 
-def lambda_handler(event: dict[str, Any], context: dict) -> dict:
+def lambda_handler(event: dict[str, Any]) -> dict:
     """AWS Lambda handler for the Dockerfile generation API endpoint.
 
     Processes incoming API Gateway requests, generates Dockerfiles,
@@ -171,13 +173,18 @@ def lambda_handler(event: dict[str, Any], context: dict) -> dict:
 
         dockerfile_key_name = generate_dockerfile_key_name(config)
         path = "python-images/" if config.language == "python" else ""
-        generator.save_dockerfile(path=dockerfile_key_name, dir=path)
+        generator.save_dockerfile(path=dockerfile_key_name, directory=path)
+
+        aws_region = os.getenv("AWS_REGION")
+        bucket = os.getenv("BUCKET")
+        url = f"https://{bucket}.s3.{aws_region}.amazonaws.com/{path}{dockerfile_key_name}"
 
         if is_running_on_lambda():
+
             if check_if_file_exists_in_s3(
-                bucket=os.getenv("S3_BUCKET"),
+                bucket=bucket,
                 key=dockerfile_key_name,
-                region_name=os.getenv("AWS_REGION"),
+                region_name=aws_region,
             ):
                 return {
                     "statusCode": 200,
@@ -185,7 +192,7 @@ def lambda_handler(event: dict[str, Any], context: dict) -> dict:
                         {
                             "message": "Dockerfile already exists",
                             "key": dockerfile_key_name,
-                            "url": f"https://{os.getenv('S3_BUCKET')}.s3.{os.getenv('AWS_REGION')}.amazonaws.com/{path}{dockerfile_key_name}",
+                            "url": url,
                         }
                     ),
                 }
@@ -198,7 +205,10 @@ def lambda_handler(event: dict[str, Any], context: dict) -> dict:
                     region_name=os.getenv("AWS_REGION"),
                 )
             except Exception as e:
-                return {"statusCode": 500, "body": json.dumps({"error": f"Failed to upload Dockerfile to S3, {e}"})}
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps({"error": f"Failed to upload Dockerfile to S3, {e}"}),
+                }
 
         return {
             "statusCode": 200,
@@ -206,7 +216,7 @@ def lambda_handler(event: dict[str, Any], context: dict) -> dict:
                 {
                     "message": "Dockerfile generated successfully",
                     "key": dockerfile_key_name,
-                    "url": f"https://{os.getenv('S3_BUCKET')}.s3.{os.getenv('AWS_REGION')}.amazonaws.com/{path}{dockerfile_key_name}",
+                    "url": url,
                 }
             ),
         }
