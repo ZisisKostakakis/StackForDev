@@ -2,15 +2,24 @@
 
 import json
 import os
+import re
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from src.docker_templates.python_template import END_OF_TEMPLATE, START_OF_TEMPLATE
+from src.docker_templates import python_template, javascript_template, go_template
 from src.s3_helper import upload_to_s3, check_if_file_exists_in_s3
 from dotenv import load_dotenv
 
 load_dotenv()
+
+TEMPLATE_REGISTRY: dict[str, tuple] = {
+    "python": (python_template.START_OF_TEMPLATE, python_template.END_OF_TEMPLATE, "PYTHON_VERSION"),
+    "javascript": (javascript_template.START_OF_TEMPLATE, javascript_template.END_OF_TEMPLATE, "NODE_VERSION"),
+    "go": (go_template.START_OF_TEMPLATE, go_template.END_OF_TEMPLATE, "GO_VERSION"),
+}
+
+SUPPORTED_LANGUAGES = set(TEMPLATE_REGISTRY.keys())
 
 
 def is_running_on_lambda() -> bool:
@@ -44,6 +53,19 @@ class GenerateDockerfileRequest(BaseModel):
     language_version: str = Field(
         ..., description="Version of the programming language (e.g. 3.11)"
     )
+
+    @field_validator("extra_dependencies", mode="before")
+    @classmethod
+    def sanitize_dependencies(cls, v: list[str]) -> list[str]:
+        """Validate extra dependencies against injection attacks."""
+        pattern = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-\[\]>=<!, ]*$")
+        for dep in v:
+            if not pattern.match(dep):
+                raise ValueError(
+                    f"Invalid dependency name: '{dep}'. "
+                    "Only alphanumeric characters, hyphens, dots, and version specifiers are allowed."
+                )
+        return v
 
     @property
     def extra_dependencies_str(self) -> str:
@@ -81,19 +103,17 @@ class DockerfileGenerator(BaseModel):
     config: GenerateDockerfileRequest
 
     def generate_dockerfile(self) -> str:
-        """Generate Dockerfile content using the template and configuration.
+        """Generate Dockerfile content using the template and configuration."""
+        language = self.config.language.lower()
+        if language not in TEMPLATE_REGISTRY:
+            raise ValueError(f"Unsupported language: {self.config.language}. Supported: {', '.join(SUPPORTED_LANGUAGES)}")
 
-        Replaces placeholder values in the template with actual configuration values
-        to create a complete Dockerfile.
-
-        Returns:
-            str: Complete Dockerfile content with all placeholders replaced
-        """
+        start_template, end_template, version_placeholder = TEMPLATE_REGISTRY[language]
         return (
-            START_OF_TEMPLATE.replace("PYTHON_VERSION", self.config.language_version)
+            start_template.replace(version_placeholder, self.config.language_version)
             .replace("DEPENDENCY_STACK", self.config.dependency_stack)
             .replace("EXTRA_DEPENDENCIES", self.config.extra_dependencies_str)
-            + END_OF_TEMPLATE
+            + end_template
         )
 
     def save_dockerfile(self, path: str = "Dockerfile.generated", directory: str = "tmp/") -> None:
@@ -148,25 +168,23 @@ def generate_dockerfile_key_name(config: GenerateDockerfileRequest) -> str:
     )
 
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
+
+
+def _response(status_code: int, body: dict) -> dict:
+    return {
+        "statusCode": status_code,
+        "headers": CORS_HEADERS,
+        "body": json.dumps(body),
+    }
+
+
 def lambda_handler(event: dict[str, Any], context: Optional[dict] = None) -> dict:
-    """AWS Lambda handler for the Dockerfile generation API endpoint.
-
-    Processes incoming API Gateway requests, generates Dockerfiles,
-    and manages S3 storage operations.
-
-    Args:
-        event: API Gateway event containing the request data
-        context: AWS Lambda context object
-
-    Returns:
-        dict: API Gateway response containing status code and response body
-
-    Response format:
-        {
-            "statusCode": int,
-            "body": str (JSON containing message, key, and URL)
-        }
-    """
+    """AWS Lambda handler for the Dockerfile generation API endpoint."""
     try:
         validate_env_vars()
         config = GenerateDockerfileRequest.from_event(event)
@@ -174,52 +192,33 @@ def lambda_handler(event: dict[str, Any], context: Optional[dict] = None) -> dic
         dockerfile_content = generator.generate_dockerfile()
 
         dockerfile_key_name = generate_dockerfile_key_name(config)
-        path = "python-images/" if config.language == "python" else ""
+        path = f"{config.language.lower()}-images/"
         generator.save_dockerfile(path=dockerfile_key_name, directory=path)
 
         aws_region = os.getenv("AWS_REGION")
         bucket = os.getenv("S3_BUCKET")
-        url = f"https://{bucket}.s3.{aws_region}.amazonaws.com/{path}{dockerfile_key_name}"
 
         if is_running_on_lambda():
-            if check_if_file_exists_in_s3(
+            s3_key = os.path.join(path, dockerfile_key_name)
+            if not check_if_file_exists_in_s3(
                 bucket=bucket,
-                key=dockerfile_key_name,
+                key=s3_key,
                 region_name=aws_region,
             ):
-                return {
-                    "statusCode": 200,
-                    "body": json.dumps(
-                        {
-                            "message": "Dockerfile already exists",
-                            "key": dockerfile_key_name,
-                            "url": url,
-                        }
-                    ),
-                }
+                try:
+                    upload_to_s3(
+                        file_path=s3_key,
+                        bucket=bucket,
+                        content=dockerfile_content,
+                        region_name=aws_region,
+                    )
+                except Exception as e:
+                    return _response(500, {"error": f"Failed to upload Dockerfile to S3, {e}"})
 
-            try:
-                upload_to_s3(
-                    file_path=os.path.join(path, dockerfile_key_name),
-                    bucket=bucket,
-                    content=dockerfile_content,
-                    region_name=aws_region,
-                )
-            except Exception as e:
-                return {
-                    "statusCode": 500,
-                    "body": json.dumps({"error": f"Failed to upload Dockerfile to S3, {e}"}),
-                }
-
-        return {
-            "statusCode": 200,
-            "body": json.dumps(
-                {
-                    "message": "Dockerfile generated successfully",
-                    "key": dockerfile_key_name,
-                    "url": url,
-                }
-            ),
-        }
+        return _response(200, {
+            "message": "Dockerfile generated successfully",
+            "key": dockerfile_key_name,
+            "dockerfile": dockerfile_content,
+        })
     except Exception as e:
-        return {"statusCode": 400, "body": json.dumps({"error": str(e)})}
+        return _response(400, {"error": str(e)})
