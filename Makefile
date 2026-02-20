@@ -15,7 +15,7 @@ docker.push:
 	docker push $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest
 
 build:
-	docker build --no-cache --platform linux/amd64 -t $(IMAGE_NAME) -f generate_dockerfile.dockerfile .
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --no-cache --platform linux/amd64 -t $(IMAGE_NAME):latest -f generate_dockerfile.dockerfile .
 
 lambda.update-code:
 	aws lambda update-function-code --function-name "$(IMAGE_NAME)" \
@@ -37,4 +37,9 @@ lambda.update-configuration:
 		fi; \
 	done
 
-deploy: build docker.login docker.tag docker.push lambda.update-code lambda.update-configuration
+deploy: docker.login build.and.push lambda.update-code lambda.update-configuration
+
+build.and.push:
+	docker buildx build --no-cache --platform linux/amd64 --provenance=false \
+		-t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest \
+		-f generate_dockerfile.dockerfile . --push

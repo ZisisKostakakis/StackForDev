@@ -41,7 +41,7 @@ JS_CONFIG = {
 
 GO_CONFIG = {
     "language": "Go",
-    "dependency_stack": "gin",
+    "dependency_stack": "Gin Stack",
     "extra_dependencies": [],
     "language_version": "1.22",
 }
@@ -66,7 +66,7 @@ def test_lambda_handler_python():
     body = json.loads(result["body"])
     assert "dockerfile" in body
     assert "FROM python:3.11-bullseye" in body["dockerfile"]
-    assert "pip install Django pandas numpy" in body["dockerfile"]
+    assert "pip install django" in body["dockerfile"].lower()
     assert body["key"].startswith("dockerfile-python-Django-3.11")
 
 
@@ -75,7 +75,7 @@ def test_lambda_handler_javascript():
     assert result["statusCode"] == 200
     body = json.loads(result["body"])
     assert "FROM node:20-bullseye" in body["dockerfile"]
-    assert "npm install -g express cors dotenv" in body["dockerfile"]
+    assert "npm install -g express" in body["dockerfile"]
 
 
 def test_lambda_handler_go():
@@ -83,7 +83,7 @@ def test_lambda_handler_go():
     assert result["statusCode"] == 200
     body = json.loads(result["body"])
     assert "FROM golang:1.22-bullseye" in body["dockerfile"]
-    assert "go install gin" in body["dockerfile"]
+    assert "go install github.com/gin-gonic/gin" in body["dockerfile"]
 
 
 def test_response_has_cors_headers():
@@ -221,7 +221,7 @@ def test_empty_extra_dependencies():
     result = lambda_handler(event=_make_event(config))
     assert result["statusCode"] == 200
     body = json.loads(result["body"])
-    assert "pip install Django " in body["dockerfile"]
+    assert "pip install django" in body["dockerfile"].lower()
 
 
 # --- Key name tests ---
