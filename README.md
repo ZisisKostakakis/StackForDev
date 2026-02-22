@@ -1,98 +1,70 @@
 # StackForDev
 
-A service that generates optimized Dockerfiles based on project requirements.
+Generate tailored Dockerfiles for development environments — no local language installation required.
+
+![Architecture Diagram](https://raw.githubusercontent.com/ZisisKostakakis/StackForDev/main/images/StackForDev.png)
+
+## Installation
+
+```bash
+pip install stackfordev
+```
+
+## Usage
+
+```bash
+# Interactive mode (prompts for missing options)
+stackfordev generate
+
+# Non-interactive
+stackfordev generate --language python --stack "Django Stack" --version 3.11
+
+# With extra dependencies
+stackfordev generate -l python -s "Data Science Stack" -v 3.11 -e "numpy,pandas,scikit-learn"
+
+# Save to file
+stackfordev generate -l go -s "Gin Stack" -v 1.23 --output ./Dockerfile
+
+# Generate offline (no API call)
+stackfordev generate -l javascript -s "Express Stack" -v 20 --local
+
+# Raw JSON output
+stackfordev generate -l python -s "Flask Stack" -v 3.12 --json
+```
+
+## Supported Languages & Stacks
+
+| Language   | Versions         | Stacks |
+|------------|------------------|--------|
+| Python     | 3.9, 3.10, 3.11, 3.12 | Django Stack, Flask Stack, Data Science Stack, Web Scraping Stack, Machine Learning Stack |
+| JavaScript | 18, 20, 22       | Express Stack, React Stack, Vue.js Stack, Node.js API Stack, Full-Stack JavaScript |
+| Go         | 1.21, 1.22, 1.23 | Gin Stack, Beego Stack, Web Framework Stack, Microservices Stack, Data Processing Stack |
+
+## Options
+
+```
+stackfordev generate [OPTIONS]
+
+  -l, --language TEXT    Programming language (python, javascript, go)
+  -s, --stack TEXT       Dependency stack
+  -v, --version TEXT     Language version
+  -e, --extras TEXT      Comma-separated extra dependencies
+  -o, --output PATH      Save Dockerfile to path
+  --local                Generate offline without API call
+  --json                 Output raw JSON response
+  --help                 Show this message and exit.
+```
+
+## How It Works
+
+1. Select language, stack, and version (interactively or via flags)
+2. The CLI calls the StackForDev API (or generates locally with `--local`)
+3. A tailored Dockerfile is returned and displayed (or saved with `--output`)
+4. Use the Dockerfile to build a container that acts as a transparent runtime proxy — run `python script.py` inside the container against your volume-mounted files with no local language installation
 
 ## Architecture
 
-![Architecture Diagram](./images/StackForDev.png)
-
-- AWS Lambda (Container Runtime)
-- Amazon API Gateway
-- Amazon ECR
-- Amazon S3
-- Terraform Cloud
-
-## Prerequisites
-
-- AWS Account
-- Terraform Cloud Account
-- Docker installed locally
-- Python 3.11+
-- Poetry for Python dependency management
-
-## Local Development
-
-1. Install dependencies:
-```bash
-poetry install
-```
-
-2. Set up environment variables:
-```bash
-export AWS_ACCESS_KEY_ID="your_access_key"
-export AWS_SECRET_ACCESS_KEY="your_secret_key"
-export AWS_REGION="your_region"
-export AWS_ACCOUNT_ID="your_account_id"
-```
-
-3. Initialize Terraform:
-```bash
-cd aws_resources
-terraform init
-```
-
-## Deployment
-
-The project uses Terraform Cloud for infrastructure management. Deployments are automated through GitHub integration.
-
-If you want to deploy through the Terraform Cloud UI, you can do so by following these steps:
-
-1. Create a new workspace in Terraform Cloud
-2. Add the GitHub repository to the workspace
-3. Create a new variable set in the workspace and add the AWS credentials as variables
-4. Run the plan and apply buttons in the Terraform Cloud UI
-
-### Manual Deployment Steps
-
-1. Push changes to GitHub
-2. Terraform Cloud automatically plans and applies changes
-3. New Docker image is built and pushed to ECR
-4. Lambda function is updated with the latest image
-
-## API Usage
-
-### Generate Dockerfile
-```bash
-curl -X POST https://api.example.com/prod/generate-dockerfile \
-  -H "x-api-key: your_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "config": {
-        "language": "python",
-        "dependency_stack": "Django",
-        "extra_dependencies": ["pandas", "numpy"],
-        "language_version": "3.11"
-    }
-}'
-```
-
-## Project Structure
-
-```
-├── aws_resources/          # Terraform infrastructure code
-├── docker_templates/       # Dockerfile templates
-├── generate_dockerfile.py  # Main Lambda function
-├── pyproject.toml         # Python dependencies
-└── README.md
-```
-
-## Infrastructure
-
-- **API Gateway**: Regional endpoint with API key authentication
-- **Lambda**: Container-based function with 30s timeout
-- **S3**: Private bucket for Dockerfile storage
-- **ECR**: Container registry for Lambda images
-- **IAM**: Least-privilege access policies
+The backend is an AWS Lambda function (container runtime) behind API Gateway, with S3 storage for generated Dockerfiles. The CLI can also generate Dockerfiles locally without any API call.
 
 ## Contributing
 
@@ -104,11 +76,4 @@ curl -X POST https://api.example.com/prod/generate-dockerfile \
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Security
-
-- S3 bucket with public access blocked
-- IAM role-based access control
-- API Gateway with usage plans and API keys
-- ECR repository with specific permissions
+MIT — see [LICENSE](LICENSE) for details.

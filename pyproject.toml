@@ -2,15 +2,24 @@
 name = "stackfordev"
 version = "0.1.0"
 description = "Generate tailored Dockerfiles for development environments"
-authors = ["ZisisKostakakisGithubPersonal <dev@zisiskostakakis.com>"]
+authors = ["Zisis Kostakakis <dev@zisiskostakakis.com>"]
+license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/ZisisKostakakis/StackForDev"
+repository = "https://github.com/ZisisKostakakis/StackForDev"
 packages = [{include = "src"}]
-keywords = ["docker", "dockerfile", "development", "devcontainer"]
+keywords = ["docker", "dockerfile", "development", "devcontainer", "cli"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [tool.poetry.scripts]
