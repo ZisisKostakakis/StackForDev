@@ -6,14 +6,29 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![codecov](https://codecov.io/gh/ZisisKostakakis/StackForDev/branch/main/graph/badge.svg)](https://codecov.io/gh/ZisisKostakakis/StackForDev)
 
-Generate tailored Dockerfiles for development environments — no local language installation required.
+> **Docker as your dev environment.** Select a language and stack, get a tailored Dockerfile — no local language installation required.
 
-![Architecture Diagram](https://raw.githubusercontent.com/ZisisKostakakis/StackForDev/main/images/StackForDev.png)
+Instead of installing Python, Node, Go, Rust, or Java on your machine, StackForDev generates a Dockerfile that acts as a transparent runtime proxy. You run commands _inside_ the container against your volume-mounted project files. Your host stays clean.
 
-## Installation
+## Quick Start
 
 ```bash
 pip install stackfordev
+
+# Interactive mode — prompts for everything
+stackfordev generate
+
+# Non-interactive — all flags provided
+stackfordev generate -l python -s "Django Stack" -v 3.12 --compose -o ./Dockerfile
+```
+
+Then:
+
+```bash
+docker build -t myapp .
+docker run -it -v $(pwd):/usr/src/app myapp
+# or with docker-compose (if you used --compose):
+docker compose run --rm dev python manage.py runserver
 ```
 
 ## Usage
@@ -23,62 +38,96 @@ pip install stackfordev
 stackfordev generate
 
 # Non-interactive
-stackfordev generate --language python --stack "Django Stack" --version 3.11
+stackfordev generate -l python -s "Django Stack" -v 3.12
 
 # With extra dependencies
 stackfordev generate -l python -s "Data Science Stack" -v 3.11 -e "numpy,pandas,scikit-learn"
 
 # Save to file
-stackfordev generate -l go -s "Gin Stack" -v 1.23 --output ./Dockerfile
+stackfordev generate -l go -s "Gin Stack" -v 1.23 -o ./Dockerfile
+
+# Also generate docker-compose.yml and .dockerignore
+stackfordev generate -l python -s "Django Stack" -v 3.12 --compose -o ./Dockerfile
 
 # Generate offline (no API call)
-stackfordev generate -l javascript -s "Express Stack" -v 20 --local
+stackfordev generate -l javascript -s "Express Stack" -v 22 --local
 
 # Raw JSON output
-stackfordev generate -l python -s "Flask Stack" -v 3.12 --json
+stackfordev generate -l rust -s "Actix-Web Stack" -v 1.82 --json
+
+# Show all supported languages, versions, and stacks
+stackfordev info
 ```
 
 ## Supported Languages & Stacks
 
-| Language   | Versions         | Stacks |
-|------------|------------------|--------|
-| Python     | 3.9, 3.10, 3.11, 3.12 | Django Stack, Flask Stack, Data Science Stack, Web Scraping Stack, Machine Learning Stack |
-| JavaScript | 18, 20, 22       | Express Stack, React Stack, Vue.js Stack, Node.js API Stack, Full-Stack JavaScript |
-| Go         | 1.21, 1.22, 1.23 | Gin Stack, Beego Stack, Web Framework Stack, Microservices Stack, Data Processing Stack |
+Use `stackfordev info` for a live table. Summary:
 
-## Options
+| Language   | Versions              | Stacks |
+|------------|-----------------------|--------|
+| Python     | 3.9, 3.10, 3.11, 3.12 | Django Stack, Flask Stack, Data Science Stack, Web Scraping Stack, Machine Learning Stack |
+| JavaScript | 18, 20, 22            | Express Stack, React Stack, Vue.js Stack, Node.js API Stack, Full-Stack JavaScript |
+| Go         | 1.21, 1.22, 1.23      | Gin Stack, Beego Stack, Web Framework Stack, Microservices Stack, Data Processing Stack |
+| Rust       | 1.80, 1.81, 1.82      | Actix-Web Stack, CLI Tools Stack, WebAssembly Stack |
+| Java       | 11, 17, 21            | Spring Boot Stack, Maven Build Stack, Gradle Build Stack |
+
+## CLI Options
 
 ```
 stackfordev generate [OPTIONS]
 
-  -l, --language TEXT    Programming language (python, javascript, go)
-  -s, --stack TEXT       Dependency stack
-  -v, --version TEXT     Language version
+  -l, --language TEXT    Programming language
+  -s, --stack TEXT       Dependency stack (e.g. 'Django Stack')
+  -v, --version TEXT     Language version (e.g. 3.12)
   -e, --extras TEXT      Comma-separated extra dependencies
   -o, --output PATH      Save Dockerfile to path
+  --compose              Also generate docker-compose.yml and .dockerignore
   --local                Generate offline without API call
   --json                 Output raw JSON response
   --help                 Show this message and exit.
+
+stackfordev info        Show supported languages, versions, and stacks
 ```
 
 ## How It Works
 
 1. Select language, stack, and version (interactively or via flags)
-2. The CLI calls the StackForDev API (or generates locally with `--local`)
-3. A tailored Dockerfile is returned and displayed (or saved with `--output`)
-4. Use the Dockerfile to build a container that acts as a transparent runtime proxy — run `python script.py` inside the container against your volume-mounted files with no local language installation
+2. The CLI calls the StackForDev API, or generates locally with `--local`
+3. A tailored Dockerfile (and optionally `docker-compose.yml` + `.dockerignore`) is returned
+4. Build the image and run commands inside the container — no local language installation needed
 
 ## Architecture
 
-The backend is an AWS Lambda function (container runtime) behind API Gateway, with S3 storage for generated Dockerfiles. The CLI can also generate Dockerfiles locally without any API call.
+![Architecture Diagram](https://raw.githubusercontent.com/ZisisKostakakis/StackForDev/main/images/StackForDev.png)
+
+**Request flow:**
+
+```
+CLI / API call
+  → API Gateway (rate-limited, CORS)
+  → AWS Lambda (Python 3.11, container runtime, ECR)
+  → Pydantic validation + injection checks
+  → Template substitution (language + stack + version)
+  → S3 dedup check → upload
+  → JSON response {dockerfile, key, message}
+```
+
+**Infrastructure:** AWS Lambda + API Gateway + S3 + ECR, provisioned with Terraform. CloudWatch alarms monitor error rate and throttles. S3 lifecycle policy manages storage costs automatically.
+
+## Monitoring
+
+- **Errors alarm:** fires when Lambda errors ≥ 5 in a 5-minute window → SNS notification
+- **Throttles alarm:** fires when Lambda throttles ≥ 10 in a 5-minute window
+- **Log retention:** CloudWatch Logs retained for 30 days, structured as JSON for Logs Insights queries
+- **Concurrency cap:** Lambda reserved concurrency set to 10 to prevent runaway scaling
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, how to run tests, and how to add a new language template in 4 steps.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
