@@ -4,6 +4,7 @@ import click
 
 from src.cli.commands.generate import generate
 from src.cli.commands.info import info
+from src.cli.commands.init import init
 
 
 @click.group()
@@ -14,3 +15,4 @@ def cli():
 
 cli.add_command(generate)
 cli.add_command(info)
+cli.add_command(init)
