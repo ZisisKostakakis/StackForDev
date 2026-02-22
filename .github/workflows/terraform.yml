@@ -1,0 +1,36 @@
+name: Terraform
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "aws_resources/**"
+  push:
+    branches: ["main"]
+    paths:
+      - "aws_resources/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        working-directory: aws_resources
+        run: terraform init -backend=false
+
+      - name: Terraform Format Check
+        working-directory: aws_resources
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: aws_resources
+        run: terraform validate
