@@ -7,7 +7,7 @@ START_OF_TEMPLATE = """# Help
 # To start an interactive Node.js shell:
     # docker exec -it manager node
 
-FROM node:NODE_VERSION-bullseye
+FROM node:NODE_VERSION-bookworm
 
 WORKDIR /usr/src/app
 

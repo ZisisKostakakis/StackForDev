@@ -7,7 +7,7 @@ START_OF_TEMPLATE = """# Help
 # To start an interactive shell:
     # docker exec -it manager bash
 
-FROM golang:GO_VERSION-bullseye
+FROM golang:GO_VERSION-bookworm
 
 WORKDIR /usr/src/app
 

@@ -7,7 +7,7 @@ START_OF_TEMPLATE = """# Help
 # To start an interactive python shell:
     # docker exec -it manager python3
 
-FROM python:PYTHON_VERSION-bullseye
+FROM python:PYTHON_VERSION-bookworm
 
 WORKDIR /usr/src/app
 
