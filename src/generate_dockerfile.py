@@ -1,6 +1,7 @@
 """Script to generate the dockerfile based on the API parameters"""
 
 import json
+import logging
 import os
 from typing import Any, Optional
 
@@ -17,6 +18,9 @@ from src.generator_core import (
 from src.s3_helper import upload_to_s3, check_if_file_exists_in_s3
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Re-export for backward compatibility
 __all__ = [
@@ -63,9 +67,19 @@ def _response(status_code: int, body: dict) -> dict:
 
 def lambda_handler(event: dict[str, Any], context: Optional[dict] = None) -> dict:
     """AWS Lambda handler for the Dockerfile generation API endpoint."""
+    request_id = getattr(context, "aws_request_id", "local") if context else "local"
     try:
         validate_env_vars()
         config = GenerateDockerfileRequest.from_event(event)
+
+        logger.info(json.dumps({
+            "request_id": request_id,
+            "language": config.language,
+            "dependency_stack": config.dependency_stack,
+            "language_version": config.language_version,
+            "status": "processing",
+        }))
+
         generator = DockerfileGenerator(config=config)
         dockerfile_content = generator.generate_dockerfile()
 
@@ -95,12 +109,28 @@ def lambda_handler(event: dict[str, Any], context: Optional[dict] = None) -> dic
                         region_name=aws_region,
                     )
                 except Exception as e:
+                    logger.error(json.dumps({
+                        "request_id": request_id,
+                        "error": f"S3 upload failed: {e}",
+                        "status_code": 500,
+                    }))
                     return _response(500, {"error": f"Failed to upload Dockerfile to S3, {e}"})
 
+        logger.info(json.dumps({
+            "request_id": request_id,
+            "language": config.language,
+            "dependency_stack": config.dependency_stack,
+            "status_code": 200,
+        }))
         return _response(200, {
             "message": "Dockerfile generated successfully",
             "key": dockerfile_key_name,
             "dockerfile": dockerfile_content,
         })
     except Exception as e:
+        logger.warning(json.dumps({
+            "request_id": request_id,
+            "error": str(e),
+            "status_code": 400,
+        }))
         return _response(400, {"error": str(e)})

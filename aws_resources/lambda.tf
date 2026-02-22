@@ -1,10 +1,11 @@
 resource "aws_lambda_function" "stack_for_dev" {
-  function_name = local.project_name
-  role          = aws_iam_role.stack_for_dev.arn
-  package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.stack_for_dev.repository_url}:latest"
-  tags          = local.common_tags
-  timeout       = 30
+  function_name                  = local.project_name
+  role                           = aws_iam_role.stack_for_dev.arn
+  package_type                   = "Image"
+  image_uri                      = "${aws_ecr_repository.stack_for_dev.repository_url}:latest"
+  tags                           = local.common_tags
+  timeout                        = 30
+  reserved_concurrent_executions = 10
 
   lifecycle {
     ignore_changes = [
