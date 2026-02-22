@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rust language support (Actix-Web Stack, CLI Tools Stack, WebAssembly Stack)
 - Java language support (Spring Boot Stack, Maven Build Stack, Gradle Build Stack)
 - `--compose` flag: generates `docker-compose.yml` and `.dockerignore` alongside Dockerfile
+- `stackfordev init` subcommand: bootstraps a complete dev workspace (Dockerfile, docker-compose.yml, .dockerignore, devrun.sh)
 - `stackfordev info` subcommand: shows all supported languages, versions, and stacks in a Rich table
 - GitHub Actions CI workflow: runs tests and lint on every push and pull request to `main`
 - Codecov coverage reporting and badge

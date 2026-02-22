@@ -16,25 +16,28 @@ Instead of installing Python, Node, Go, Rust, or Java on your machine, StackForD
 ```bash
 pip install stackfordev
 
-# Interactive mode — prompts for everything
-stackfordev generate
+# Bootstrap a complete dev workspace in one command
+stackfordev init -l python -s "Django Stack" -v 3.12
 
-# Non-interactive — all flags provided
-stackfordev generate -l python -s "Django Stack" -v 3.12 --compose -o ./Dockerfile
+# Then:
+docker compose build
+source devrun.sh
+devrun python manage.py runserver
 ```
 
-Then:
+Or just generate a Dockerfile:
 
 ```bash
-docker build -t myapp .
-docker run -it -v $(pwd):/usr/src/app myapp
-# or with docker-compose (if you used --compose):
-docker compose run --rm dev python manage.py runserver
+stackfordev generate -l python -s "Django Stack" -v 3.12 --compose -o ./Dockerfile
 ```
 
 ## Usage
 
 ```bash
+# Bootstrap a full workspace (Dockerfile + docker-compose.yml + .dockerignore + devrun.sh)
+stackfordev init -l python -s "Django Stack" -v 3.12
+stackfordev init  # interactive mode
+
 # Interactive mode (prompts for missing options)
 stackfordev generate
 
@@ -88,6 +91,15 @@ stackfordev generate [OPTIONS]
   --help                 Show this message and exit.
 
 stackfordev info        Show supported languages, versions, and stacks
+
+stackfordev init [OPTIONS]
+
+  -l, --language TEXT    Programming language
+  -s, --stack TEXT       Dependency stack
+  -v, --version TEXT     Language version
+  -e, --extras TEXT      Comma-separated extra dependencies
+  -d, --directory PATH   Target directory (default: current directory)
+  --help                 Show this message and exit.
 ```
 
 ## How It Works
