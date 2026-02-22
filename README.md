@@ -135,12 +135,12 @@ CLI / API call
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, how to run tests, and how to add a new language template in 4 steps.
+See [CONTRIBUTING.md](https://github.com/ZisisKostakakis/StackForDev/blob/main/CONTRIBUTING.md) for local setup, how to run tests, and how to add a new language template in 4 steps.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](https://github.com/ZisisKostakakis/StackForDev/blob/main/CHANGELOG.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](https://github.com/ZisisKostakakis/StackForDev/blob/main/LICENSE) for details.
