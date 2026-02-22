@@ -36,10 +36,9 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/test-results-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: junit.xml
           report_type: test_results
 
   lint:
