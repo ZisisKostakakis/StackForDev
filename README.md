@@ -1,6 +1,7 @@
 # StackForDev
 
 [![CI](https://github.com/ZisisKostakakis/StackForDev/actions/workflows/ci.yml/badge.svg)](https://github.com/ZisisKostakakis/StackForDev/actions/workflows/ci.yml)
+[![Deploy](https://github.com/ZisisKostakakis/StackForDev/actions/workflows/deploy.yml/badge.svg)](https://github.com/ZisisKostakakis/StackForDev/actions/workflows/deploy.yml)
 [![PyPI version](https://badge.fury.io/py/stackfordev.svg)](https://badge.fury.io/py/stackfordev)
 [![Python Versions](https://img.shields.io/pypi/pyversions/stackfordev)](https://pypi.org/project/stackfordev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
