@@ -64,9 +64,21 @@ def test_json_flag_outputs_json():
 
 
 def test_unsupported_language_error():
-    result = runner.invoke(cli, ["generate", "--local", "-l", "rust", "-s", "X", "-v", "1.0"])
+    result = runner.invoke(cli, ["generate", "--local", "-l", "cobol", "-s", "X", "-v", "1.0"])
     assert result.exit_code != 0
     assert "Unsupported language" in result.output
+
+
+def test_local_rust_generates_dockerfile():
+    result = runner.invoke(cli, ["generate", "--local", "-l", "rust", "-s", "Actix-Web Stack", "-v", "1.82"])
+    assert result.exit_code == 0
+    assert "FROM rust:1.82-bookworm" in result.output
+
+
+def test_local_java_generates_dockerfile():
+    result = runner.invoke(cli, ["generate", "--local", "-l", "java", "-s", "Spring Boot Stack", "-v", "21"])
+    assert result.exit_code == 0
+    assert "FROM eclipse-temurin:21-jdk-bookworm" in result.output
 
 
 def test_unsupported_version_error():
