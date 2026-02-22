@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-02-22
+
+### Fixed
+- Use absolute URLs for PyPI-compatible links in README
+
+## [0.2.2] — 2026-02-22
+
+### Added
+- Codecov coverage reporting and badge integrated into CI workflow
+
+### Fixed
+- Fixed wrong library call in CI pipeline
+- Updated deprecated CI library dependency
+
+## [0.2.1] — 2026-02-22
+
+### Fixed
+- Test cases now use dynamic version checking instead of hardcoded values
+- Import existing CloudWatch log group into Terraform state
+- Remove `reserved_concurrent_executions` from Lambda (reverted for flexibility)
+- S3 lifecycle rule missing `filter` attribute
+
+### Changed
+- Removed deploy badge from README
+- Lambda deploys are now manual via `make deploy`; removed automated deploy workflow
+- Terraform GitHub Actions workflow removed (HCP Cloud VCS integration handles Terraform)
+
+## [0.2.0] — 2026-02-22
+
 ### Added
 - Rust language support (Actix-Web Stack, CLI Tools Stack, WebAssembly Stack)
 - Java language support (Spring Boot Stack, Maven Build Stack, Gradle Build Stack)
@@ -14,14 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `stackfordev init` subcommand: bootstraps a complete dev workspace (Dockerfile, docker-compose.yml, .dockerignore, devrun.sh)
 - `stackfordev info` subcommand: shows all supported languages, versions, and stacks in a Rich table
 - GitHub Actions CI workflow: runs tests and lint on every push and pull request to `main`
-- Codecov coverage reporting and badge
 - CloudWatch alarms for Lambda error rate and throttles
 - CloudWatch log group with 30-day retention and structured JSON logging
 - S3 lifecycle policy: STANDARD_IA after 90 days, expiry after 365 days
 - Lambda `reserved_concurrent_executions = 10` for cost safety
 - `language_version` field validator in Pydantic model (cross-checks against valid versions per language)
 - CONTRIBUTING.md with setup guide and language addition walkthrough
-- CHANGELOG.md
 
 ### Changed
 - Upgraded base Docker images from `bullseye` to `bookworm` (all languages)
