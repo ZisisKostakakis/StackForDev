@@ -5,7 +5,6 @@ resource "aws_lambda_function" "stack_for_dev" {
   image_uri                      = "${aws_ecr_repository.stack_for_dev.repository_url}:latest"
   tags                           = local.common_tags
   timeout                        = 30
-  reserved_concurrent_executions = 10
 
   lifecycle {
     ignore_changes = [
