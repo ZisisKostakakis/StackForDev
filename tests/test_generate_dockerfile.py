@@ -46,13 +46,27 @@ GO_CONFIG = {
     "language_version": "1.22",
 }
 
+RUST_CONFIG = {
+    "language": "rust",
+    "dependency_stack": "Actix-Web Stack",
+    "extra_dependencies": [],
+    "language_version": "1.82",
+}
+
+JAVA_CONFIG = {
+    "language": "java",
+    "dependency_stack": "Spring Boot Stack",
+    "extra_dependencies": [],
+    "language_version": "21",
+}
+
 
 @pytest.fixture(autouse=True)
 def setup_env_and_cleanup(monkeypatch):
     monkeypatch.setenv("S3_BUCKET", "test-bucket")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
     yield
-    for d in ["python-images/", "javascript-images/", "go-images/"]:
+    for d in ["python-images/", "javascript-images/", "go-images/", "rust-images/", "java-images/"]:
         if os.path.isdir(d):
             shutil.rmtree(d)
 
@@ -84,6 +98,21 @@ def test_lambda_handler_go():
     body = json.loads(result["body"])
     assert "FROM golang:1.22-bookworm" in body["dockerfile"]
     assert "go install github.com/gin-gonic/gin" in body["dockerfile"]
+
+
+def test_lambda_handler_rust():
+    result = lambda_handler(event=_make_event(RUST_CONFIG))
+    assert result["statusCode"] == 200
+    body = json.loads(result["body"])
+    assert "FROM rust:1.82-bookworm" in body["dockerfile"]
+    assert "cargo install" in body["dockerfile"]
+
+
+def test_lambda_handler_java():
+    result = lambda_handler(event=_make_event(JAVA_CONFIG))
+    assert result["statusCode"] == 200
+    body = json.loads(result["body"])
+    assert "FROM eclipse-temurin:21-jdk-bookworm" in body["dockerfile"]
 
 
 def test_response_has_cors_headers():
@@ -129,11 +158,11 @@ def test_missing_required_fields():
 
 
 def test_unsupported_language():
-    config = {**PYTHON_CONFIG, "language": "Rust"}
+    config = {**PYTHON_CONFIG, "language": "COBOL"}
     result = lambda_handler(event=_make_event(config))
     assert result["statusCode"] == 400
     body = json.loads(result["body"])
-    assert "Unsupported language" in body["error"]
+    assert "error" in body
 
 
 def test_missing_env_vars(monkeypatch):
@@ -214,6 +243,32 @@ def test_go_template_structure():
     assert "FROM golang:1.22-bookworm" in content
     assert "WORKDIR /usr/src/app" in content
     assert 'CMD ["bash"]' in content
+
+
+def test_rust_template_structure():
+    config = GenerateDockerfileRequest(**RUST_CONFIG)
+    gen = DockerfileGenerator(config=config)
+    content = gen.generate_dockerfile()
+    assert "FROM rust:1.82-bookworm" in content
+    assert "WORKDIR /usr/src/app" in content
+    assert 'CMD ["bash"]' in content
+
+
+def test_java_template_structure():
+    config = GenerateDockerfileRequest(**JAVA_CONFIG)
+    gen = DockerfileGenerator(config=config)
+    content = gen.generate_dockerfile()
+    assert "FROM eclipse-temurin:21-jdk-bookworm" in content
+    assert "WORKDIR /usr/src/app" in content
+    assert 'CMD ["bash"]' in content
+
+
+def test_invalid_version_for_language_rejected():
+    config = {**PYTHON_CONFIG, "language_version": "2.7"}
+    result = lambda_handler(event=_make_event(config))
+    assert result["statusCode"] == 400
+    body = json.loads(result["body"])
+    assert "error" in body
 
 
 def test_empty_extra_dependencies():

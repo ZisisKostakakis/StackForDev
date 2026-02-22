@@ -34,7 +34,7 @@ def test_validate_language_valid():
 
 def test_validate_language_invalid():
     with pytest.raises(ValueError, match="Unsupported language"):
-        validate_language("Rust")
+        validate_language("COBOL")
 
 
 def test_validate_version_valid():

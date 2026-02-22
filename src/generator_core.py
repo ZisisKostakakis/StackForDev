@@ -1,19 +1,30 @@
 """Core Dockerfile generation logic, decoupled from AWS dependencies."""
 
+import json
 import re
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from src.docker_templates import python_template, javascript_template, go_template
+from src.docker_templates import python_template, javascript_template, go_template, rust_template, java_template
 
 TEMPLATE_REGISTRY: dict[str, tuple] = {
     "python": (python_template.START_OF_TEMPLATE, python_template.END_OF_TEMPLATE, "PYTHON_VERSION"),
     "javascript": (javascript_template.START_OF_TEMPLATE, javascript_template.END_OF_TEMPLATE, "NODE_VERSION"),
     "go": (go_template.START_OF_TEMPLATE, go_template.END_OF_TEMPLATE, "GO_VERSION"),
+    "rust": (rust_template.START_OF_TEMPLATE, rust_template.END_OF_TEMPLATE, "RUST_VERSION"),
+    "java": (java_template.START_OF_TEMPLATE, java_template.END_OF_TEMPLATE, "JAVA_VERSION"),
 }
 
 SUPPORTED_LANGUAGES = set(TEMPLATE_REGISTRY.keys())
+
+VALID_VERSIONS: dict[str, list[str]] = {
+    "python": ["3.12", "3.11", "3.10", "3.9"],
+    "javascript": ["22", "20", "18"],
+    "go": ["1.23", "1.22", "1.21"],
+    "rust": ["1.82", "1.81", "1.80"],
+    "java": ["21", "17", "11"],
+}
 
 STACK_PACKAGES: dict[str, str] = {
     # Python
@@ -34,6 +45,14 @@ STACK_PACKAGES: dict[str, str] = {
     "Web Framework Stack": "github.com/labstack/echo/v4@latest",
     "Microservices Stack": "github.com/go-kit/kit@latest",
     "Data Processing Stack": "github.com/onsi/ginkgo/v2@latest",
+    # Rust (cargo install packages)
+    "Actix-Web Stack": "actix-web serde tokio",
+    "CLI Tools Stack": "clap anyhow",
+    "WebAssembly Stack": "wasm-bindgen-cli",
+    # Java (informational — Maven/Gradle manage deps via pom.xml/build.gradle)
+    "Spring Boot Stack": "spring-boot",
+    "Maven Build Stack": "maven-wrapper",
+    "Gradle Build Stack": "gradle",
 }
 
 
@@ -66,6 +85,18 @@ class GenerateDockerfileRequest(BaseModel):
                 )
         return v
 
+    @field_validator("language_version")
+    @classmethod
+    def validate_language_version(cls, v: str, info: Any) -> str:
+        """Validate that language_version is valid for the given language."""
+        language = info.data.get("language", "").lower() if info.data else ""
+        if language in VALID_VERSIONS and v not in VALID_VERSIONS[language]:
+            valid = ", ".join(VALID_VERSIONS[language])
+            raise ValueError(
+                f"Unsupported version '{v}' for {language}. Supported: {valid}"
+            )
+        return v
+
     @property
     def extra_dependencies_str(self) -> str:
         """Convert the list of extra dependencies to a space-separated string."""
@@ -74,7 +105,6 @@ class GenerateDockerfileRequest(BaseModel):
     @classmethod
     def from_event(cls, event: dict[str, Any]) -> "GenerateDockerfileRequest":
         """Create a GenerateDockerfileRequest instance from an API Gateway event."""
-        import json
         dict_obj = json.loads(event["body"])
         return cls(**dict_obj["config"])
 

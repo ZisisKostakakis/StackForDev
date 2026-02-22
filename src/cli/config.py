@@ -6,12 +6,16 @@ LANGUAGE_VERSIONS: dict[str, list[str]] = {
     "python": ["3.12", "3.11", "3.10", "3.9"],
     "javascript": ["22", "20", "18"],
     "go": ["1.23", "1.22", "1.21"],
+    "rust": ["1.82", "1.81", "1.80"],
+    "java": ["21", "17", "11"],
 }
 
 LANGUAGE_STACKS: dict[str, list[str]] = {
     "python": ["Django Stack", "Flask Stack", "Data Science Stack", "Web Scraping Stack", "Machine Learning Stack"],
     "javascript": ["Express Stack", "React Stack", "Vue.js Stack", "Node.js API Stack", "Full-Stack JavaScript"],
     "go": ["Gin Stack", "Beego Stack", "Web Framework Stack", "Microservices Stack", "Data Processing Stack"],
+    "rust": ["Actix-Web Stack", "CLI Tools Stack", "WebAssembly Stack"],
+    "java": ["Spring Boot Stack", "Maven Build Stack", "Gradle Build Stack"],
 }
 
 API_URL = "https://f88slnkaa6.execute-api.eu-west-2.amazonaws.com/prod/cli/generate-dockerfile"
