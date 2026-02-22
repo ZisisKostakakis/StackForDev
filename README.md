@@ -4,7 +4,7 @@
 [![PyPI version](https://badge.fury.io/py/stackfordev.svg)](https://badge.fury.io/py/stackfordev)
 [![Python Versions](https://img.shields.io/pypi/pyversions/stackfordev)](https://pypi.org/project/stackfordev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![codecov](https://codecov.io/gh/ZisisKostakakis/StackForDev/branch/main/graph/badge.svg)](https://codecov.io/gh/ZisisKostakakis/StackForDev)
+[![codecov](https://codecov.io/github/ZisisKostakakis/StackForDev/branch/main/graph/badge.svg?token=8UWP56EBBG)](https://codecov.io/github/ZisisKostakakis/StackForDev)
 
 > **Docker as your dev environment.** Select a language and stack, get a tailored Dockerfile — no local language installation required.
 
