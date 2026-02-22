@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stackfordev"
-version = "0.2.0"
+version = "0.2.1"
 description = "Generate tailored Dockerfiles for development environments"
 authors = ["Zisis Kostakakis <dev@zisiskostakakis.com>"]
 license = "MIT"
