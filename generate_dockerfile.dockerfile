@@ -7,6 +7,6 @@ COPY poetry.lock ${LAMBDA_TASK_ROOT}
 COPY src/ ${LAMBDA_TASK_ROOT}/src/
 
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi
+    && poetry install --with lambda --no-interaction --no-ansi --no-root
 
 CMD [ "src.generate_dockerfile.lambda_handler" ]

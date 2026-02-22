@@ -12,10 +12,17 @@ resource "aws_api_gateway_deployment" "stack_for_dev" {
 
   triggers = {
     redeployment = sha1(jsonencode({
-      rest_api    = aws_api_gateway_rest_api.stack_for_dev.body
-      method      = aws_api_gateway_method.generate_dockerfile.id
-      integration = aws_api_gateway_integration.generate_dockerfile.id
-      resource    = aws_api_gateway_resource.generate_dockerfile.id
+      rest_api              = aws_api_gateway_rest_api.stack_for_dev.body
+      method                = aws_api_gateway_method.generate_dockerfile.id
+      integration           = aws_api_gateway_integration.generate_dockerfile.id
+      resource              = aws_api_gateway_resource.generate_dockerfile.id
+      options_method        = aws_api_gateway_method.options.id
+      options_integration   = aws_api_gateway_integration.options.id
+      cli_resource          = aws_api_gateway_resource.cli_generate_dockerfile.id
+      cli_method            = aws_api_gateway_method.cli_generate_dockerfile.id
+      cli_integration       = aws_api_gateway_integration.cli_generate_dockerfile.id
+      cli_options_method    = aws_api_gateway_method.cli_options.id
+      cli_options_integration = aws_api_gateway_integration.cli_options.id
     }))
   }
 
@@ -46,8 +53,8 @@ resource "aws_api_gateway_usage_plan" "stack_for_dev" {
     stage  = "prod"
 
     throttle {
-      burst_limit = 1
-      rate_limit  = 1
+      burst_limit = 20
+      rate_limit  = 10
       path        = "*/*"
     }
   }
@@ -96,7 +103,7 @@ resource "aws_api_gateway_resource" "generate_dockerfile" {
 
 resource "aws_api_gateway_method" "generate_dockerfile" {
   authorization    = "NONE"
-  http_method      = "GET"
+  http_method      = "POST"
   resource_id      = aws_api_gateway_resource.generate_dockerfile.id
   rest_api_id      = aws_api_gateway_rest_api.stack_for_dev.id
   api_key_required = "true"
@@ -120,8 +127,177 @@ resource "aws_api_gateway_method_response" "response_200" {
   response_models = {
     "application/json" = "Empty"
   }
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
   depends_on = [
     aws_api_gateway_method.generate_dockerfile
+  ]
+}
+
+# CORS OPTIONS method
+resource "aws_api_gateway_method" "options" {
+  rest_api_id   = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id   = aws_api_gateway_resource.generate_dockerfile.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "options" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.generate_dockerfile.id
+  http_method = aws_api_gateway_method.options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "options_200" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.generate_dockerfile.id
+  http_method = aws_api_gateway_method.options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "options" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.generate_dockerfile.id
+  http_method = aws_api_gateway_method.options.http_method
+  status_code = aws_api_gateway_method_response.options_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# --- Public CLI endpoint: /cli/generate-dockerfile (no API key) ---
+
+resource "aws_api_gateway_resource" "cli" {
+  path_part   = "cli"
+  parent_id   = aws_api_gateway_rest_api.stack_for_dev.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+}
+
+resource "aws_api_gateway_resource" "cli_generate_dockerfile" {
+  path_part   = "generate-dockerfile"
+  parent_id   = aws_api_gateway_resource.cli.id
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+}
+
+resource "aws_api_gateway_method" "cli_generate_dockerfile" {
+  authorization    = "NONE"
+  http_method      = "POST"
+  resource_id      = aws_api_gateway_resource.cli_generate_dockerfile.id
+  rest_api_id      = aws_api_gateway_rest_api.stack_for_dev.id
+  api_key_required = false
+}
+
+resource "aws_api_gateway_integration" "cli_generate_dockerfile" {
+  timeout_milliseconds    = 20000
+  http_method             = aws_api_gateway_method.cli_generate_dockerfile.http_method
+  resource_id             = aws_api_gateway_resource.cli_generate_dockerfile.id
+  rest_api_id             = aws_api_gateway_rest_api.stack_for_dev.id
+  type                    = var.aws_api_gateway_integration
+  integration_http_method = "POST"
+  uri                     = aws_lambda_function.stack_for_dev.invoke_arn
+}
+
+resource "aws_api_gateway_method_response" "cli_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.cli_generate_dockerfile.id
+  http_method = aws_api_gateway_method.cli_generate_dockerfile.http_method
+  status_code = "200"
+  response_models = {
+    "application/json" = "Empty"
+  }
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+  depends_on = [
+    aws_api_gateway_method.cli_generate_dockerfile
+  ]
+}
+
+# CORS OPTIONS for CLI endpoint
+resource "aws_api_gateway_method" "cli_options" {
+  rest_api_id   = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id   = aws_api_gateway_resource.cli_generate_dockerfile.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "cli_options" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.cli_generate_dockerfile.id
+  http_method = aws_api_gateway_method.cli_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "cli_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.cli_generate_dockerfile.id
+  http_method = aws_api_gateway_method.cli_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "cli_options" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  resource_id = aws_api_gateway_resource.cli_generate_dockerfile.id
+  http_method = aws_api_gateway_method.cli_options.http_method
+  status_code = aws_api_gateway_method_response.cli_options_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# Tighter throttle for CLI endpoint
+resource "aws_api_gateway_method_settings" "cli_throttle" {
+  rest_api_id = aws_api_gateway_rest_api.stack_for_dev.id
+  stage_name  = "prod"
+  method_path = "cli/generate-dockerfile/POST"
+
+  settings {
+    throttling_burst_limit = 5
+    throttling_rate_limit  = 10
+  }
+  depends_on = [
+    aws_api_gateway_stage.prod,
+    aws_api_gateway_method.cli_generate_dockerfile
   ]
 }
 
