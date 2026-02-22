@@ -101,9 +101,10 @@ def test_missing_flags_non_tty_error():
 
 
 def test_version_option():
+    from importlib.metadata import version
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    assert "0.1.4" in result.output
+    assert version("stackfordev") in result.output
 
 
 def test_compose_flag_outputs_compose_content():
