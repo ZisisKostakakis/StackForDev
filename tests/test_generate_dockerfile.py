@@ -236,7 +236,7 @@ def test_generate_key_name():
 def test_generate_key_name_no_extras():
     config = GenerateDockerfileRequest(**{**PYTHON_CONFIG, "extra_dependencies": []})
     key = generate_dockerfile_key_name(config)
-    assert key == "dockerfile-python-Django-3.11-.dockerfile"
+    assert key == "dockerfile-python-Django-3.11.dockerfile"
 
 
 # --- S3 upload mock tests ---

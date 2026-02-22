@@ -1,5 +1,11 @@
 # StackForDev
 
+[![CI](https://github.com/ZisisKostakakis/StackForDev/actions/workflows/ci.yml/badge.svg)](https://github.com/ZisisKostakakis/StackForDev/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/stackfordev.svg)](https://badge.fury.io/py/stackfordev)
+[![Python Versions](https://img.shields.io/pypi/pyversions/stackfordev)](https://pypi.org/project/stackfordev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![codecov](https://codecov.io/gh/ZisisKostakakis/StackForDev/branch/main/graph/badge.svg)](https://codecov.io/gh/ZisisKostakakis/StackForDev)
+
 Generate tailored Dockerfiles for development environments — no local language installation required.
 
 ![Architecture Diagram](https://raw.githubusercontent.com/ZisisKostakakis/StackForDev/main/images/StackForDev.png)

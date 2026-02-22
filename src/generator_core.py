@@ -102,7 +102,8 @@ class DockerfileGenerator(BaseModel):
 
 def generate_dockerfile_key_name(config: GenerateDockerfileRequest) -> str:
     """Generate a unique S3 key name for the Dockerfile."""
+    extras = f"-{'-'.join(config.extra_dependencies)}" if config.extra_dependencies else ""
     return (
         f"dockerfile-{config.language}-{config.dependency_stack}-"
-        + f"{config.language_version}-{'-'.join(config.extra_dependencies)}.dockerfile"
+        f"{config.language_version}{extras}.dockerfile"
     )
