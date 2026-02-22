@@ -1,19 +1,19 @@
 """stackfordev generate command."""
 
 import json
+import os
 import sys
 
 import click
 
 from src.cli.config import (
-    LANGUAGE_VERSIONS,
-    LANGUAGE_STACKS,
     validate_language,
     validate_version,
     validate_stack,
 )
 from src.cli.display import print_dockerfile, print_saved
 from src.generator_core import GenerateDockerfileRequest, DockerfileGenerator
+from src.docker_templates.compose_template import COMPOSE_TEMPLATE, DOCKERIGNORE_TEMPLATE
 
 
 @click.command()
@@ -24,7 +24,8 @@ from src.generator_core import GenerateDockerfileRequest, DockerfileGenerator
 @click.option("--output", "-o", type=click.Path(), default=None, help="Save Dockerfile to path")
 @click.option("--local", is_flag=True, default=False, help="Generate offline (no API call)")
 @click.option("--json-output", "--json", "json_mode", is_flag=True, default=False, help="Output raw JSON")
-def generate(language, stack, lang_version, extras, output, local, json_mode):
+@click.option("--compose", is_flag=True, default=False, help="Also generate docker-compose.yml and .dockerignore")
+def generate(language, stack, lang_version, extras, output, local, json_mode, compose):
     """Generate a Dockerfile for a development environment."""
     # If any flag is missing and we're in a TTY, go interactive
     if (language is None or stack is None or lang_version is None) and sys.stdin.isatty():
@@ -80,6 +81,26 @@ def generate(language, stack, lang_version, extras, output, local, json_mode):
         with open(output, "w", encoding="utf-8") as f:
             f.write(dockerfile_content)
         print_saved(output)
+
+        if compose:
+            output_dir = os.path.dirname(os.path.abspath(output))
+            project_name = os.path.basename(output_dir) or lang
+
+            compose_path = os.path.join(output_dir, "docker-compose.yml")
+            with open(compose_path, "w", encoding="utf-8") as f:
+                f.write(COMPOSE_TEMPLATE.format(project_name=project_name))
+            print_saved(compose_path)
+
+            dockerignore_path = os.path.join(output_dir, ".dockerignore")
+            with open(dockerignore_path, "w", encoding="utf-8") as f:
+                f.write(DOCKERIGNORE_TEMPLATE)
+            print_saved(dockerignore_path)
         return
+
+    if compose:
+        click.echo("--- docker-compose.yml ---")
+        click.echo(COMPOSE_TEMPLATE.format(project_name=lang))
+        click.echo("--- .dockerignore ---")
+        click.echo(DOCKERIGNORE_TEMPLATE)
 
     print_dockerfile(dockerfile_content, lang, stack)

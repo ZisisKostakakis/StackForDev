@@ -65,7 +65,7 @@ def test_lambda_handler_python():
     assert result["statusCode"] == 200
     body = json.loads(result["body"])
     assert "dockerfile" in body
-    assert "FROM python:3.11-bullseye" in body["dockerfile"]
+    assert "FROM python:3.11-bookworm" in body["dockerfile"]
     assert "pip install django" in body["dockerfile"].lower()
     assert body["key"].startswith("dockerfile-python-Django-3.11")
 
@@ -74,7 +74,7 @@ def test_lambda_handler_javascript():
     result = lambda_handler(event=_make_event(JS_CONFIG))
     assert result["statusCode"] == 200
     body = json.loads(result["body"])
-    assert "FROM node:20-bullseye" in body["dockerfile"]
+    assert "FROM node:20-bookworm" in body["dockerfile"]
     assert "npm install -g express" in body["dockerfile"]
 
 
@@ -82,7 +82,7 @@ def test_lambda_handler_go():
     result = lambda_handler(event=_make_event(GO_CONFIG))
     assert result["statusCode"] == 200
     body = json.loads(result["body"])
-    assert "FROM golang:1.22-bullseye" in body["dockerfile"]
+    assert "FROM golang:1.22-bookworm" in body["dockerfile"]
     assert "go install github.com/gin-gonic/gin" in body["dockerfile"]
 
 
@@ -193,7 +193,7 @@ def test_python_template_structure():
     config = GenerateDockerfileRequest(**PYTHON_CONFIG)
     gen = DockerfileGenerator(config=config)
     content = gen.generate_dockerfile()
-    assert "FROM python:3.11-bullseye" in content
+    assert "FROM python:3.11-bookworm" in content
     assert "WORKDIR /usr/src/app" in content
     assert 'CMD ["bash"]' in content
 
@@ -202,7 +202,7 @@ def test_javascript_template_structure():
     config = GenerateDockerfileRequest(**JS_CONFIG)
     gen = DockerfileGenerator(config=config)
     content = gen.generate_dockerfile()
-    assert "FROM node:20-bullseye" in content
+    assert "FROM node:20-bookworm" in content
     assert "WORKDIR /usr/src/app" in content
     assert 'CMD ["bash"]' in content
 
@@ -211,7 +211,7 @@ def test_go_template_structure():
     config = GenerateDockerfileRequest(**GO_CONFIG)
     gen = DockerfileGenerator(config=config)
     content = gen.generate_dockerfile()
-    assert "FROM golang:1.22-bullseye" in content
+    assert "FROM golang:1.22-bookworm" in content
     assert "WORKDIR /usr/src/app" in content
     assert 'CMD ["bash"]' in content
 
