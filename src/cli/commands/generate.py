@@ -25,7 +25,8 @@ from src.docker_templates.compose_template import COMPOSE_TEMPLATE, DOCKERIGNORE
 @click.option("--local", is_flag=True, default=False, help="Generate offline (no API call)")
 @click.option("--json-output", "--json", "json_mode", is_flag=True, default=False, help="Output raw JSON")
 @click.option("--compose", is_flag=True, default=False, help="Also generate docker-compose.yml and .dockerignore")
-def generate(language, stack, lang_version, extras, output, local, json_mode, compose):
+@click.option("--dry-run", "dry_run", is_flag=True, default=False, help="Print Dockerfile to stdout without saving or uploading")
+def generate(language, stack, lang_version, extras, output, local, json_mode, compose, dry_run):
     """Generate a Dockerfile for a development environment."""
     # If any flag is missing and we're in a TTY, go interactive
     if (language is None or stack is None or lang_version is None) and sys.stdin.isatty():
@@ -67,6 +68,10 @@ def generate(language, stack, lang_version, extras, output, local, json_mode, co
         except Exception as e:
             click.echo(f"API error: {e}\nTip: use --local to generate offline.", err=True)
             sys.exit(1)
+
+    if dry_run:
+        click.echo(dockerfile_content)
+        return
 
     if json_mode:
         click.echo(json.dumps({
