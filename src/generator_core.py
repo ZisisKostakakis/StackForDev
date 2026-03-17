@@ -72,6 +72,17 @@ class GenerateDockerfileRequest(BaseModel):
         ..., description="Version of the programming language (e.g. 3.11)"
     )
 
+    @field_validator("language", mode="before")
+    @classmethod
+    def normalize_language(cls, v: str) -> str:
+        normalized = v.strip().lower()
+        if normalized not in SUPPORTED_LANGUAGES:
+            valid = ", ".join(sorted(SUPPORTED_LANGUAGES))
+            raise ValueError(
+                f"Unsupported language '{v}'. Valid options are: {valid}."
+            )
+        return normalized
+
     @field_validator("extra_dependencies", mode="before")
     @classmethod
     def sanitize_dependencies(cls, v: list[str]) -> list[str]:
