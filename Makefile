@@ -43,3 +43,23 @@ build.and.push:
 	docker buildx build --no-cache --platform linux/amd64 --provenance=false \
 		-t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest \
 		-f generate_dockerfile.dockerfile . --push
+
+# Local dev shortcuts ---------------------------------------------------------
+
+.PHONY: lint test help
+
+lint:
+	pylint src/
+
+test:
+	pytest
+
+help:
+	@echo "Local dev targets:"
+	@echo "  make lint     Run pylint over src/"
+	@echo "  make test     Run pytest"
+	@echo ""
+	@echo "Deploy targets:"
+	@echo "  make build              Build the Lambda container image"
+	@echo "  make build.and.push     Build and push to ECR"
+	@echo "  make deploy             Full deploy (build, push, update Lambda)"
