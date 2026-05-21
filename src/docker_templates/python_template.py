@@ -11,15 +11,18 @@ FROM python:PYTHON_VERSION-bookworm
 
 WORKDIR /usr/src/app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \\
+# Install system dependencies (no-install-recommends keeps the image lean and the
+# apt layer cache stable across rebuilds when only the pip layer below changes).
+RUN apt-get update && apt-get install -y --no-install-recommends \\
     git \\
     curl \\
     build-essential \\
     python3-dev \\
     && rm -rf /var/lib/apt/lists/*
 
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \\
+    PIP_NO_CACHE_DIR=1 \\
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Install extra dependencies
 RUN pip install DEPENDENCY_STACK EXTRA_DEPENDENCIES
