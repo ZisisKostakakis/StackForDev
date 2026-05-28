@@ -62,6 +62,25 @@ stackfordev generate -l rust -s "Actix-Web Stack" -v 1.82 --json
 stackfordev info
 ```
 
+### Common workflows
+
+```bash
+# Start a Django project from zero — generates Dockerfile + compose + .dockerignore + devrun
+stackfordev init -l python -s "Django Stack" -v 3.12
+source devrun.sh
+devrun django-admin startproject mysite .
+
+# Spin up a one-off Rust container to try a crate without polluting your machine
+stackfordev generate -l rust -s "Actix-Web Stack" -v 1.82 -o ./Dockerfile --compose
+docker compose run --rm dev cargo add tokio
+
+# Generate a Lambda-targeted Python image and inspect it before committing
+stackfordev generate -l python -s "FastAPI Stack" -v 3.11 --json | jq .
+
+# Iterate offline (no API call, no API key needed) — useful on planes / poor wifi
+stackfordev generate -l javascript -s "Express Stack" -v 22 --local
+```
+
 ## Supported Languages & Stacks
 
 Use `stackfordev info` for a live table. Summary:
